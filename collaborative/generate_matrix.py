@@ -32,12 +32,19 @@ def getMovieDict(path, df):
     pass
 
 
-def getItemDict(UserMovieDF, pathDict, item="user", reverse=False):
-    """ 获取{item:index}"""
+def getItemDict(UserMovieDF, pathDict, item="user"):
+    """
+    :param UserMovieDF: 列名为 user, movie 的 dataframe
+    :param pathDict: 字典配置存于文件
+    :param item:
+    :return: 返回{item:index}字典，便于矩阵填充
+    """
     path = pathDict[item]
     # preset UserMovieDF col_names
+    UserMovieDF.columns = ["user", "movie"]
 
     itemDF = pd.read_pickle(path) if os.path.exists(path) else UserMovieDF[item]
+    # 保证固定数据集生成字典一致
     itemDF.sort_values(by=item, ascending=True, inplace=True)
 
     return df2Dict(itemDF)
@@ -57,8 +64,22 @@ def getMovieMatrix(inPath):
 
 
 if __name__ == '__main__':
+    pathDict = {
+        "user": "",
+        "movie": "",
+    }
     user = pd.read_csv("../dataset/raw/user.csv", header=0)
     us, ms = user["用户ID"].nunique(), user["电影名"].nunique()
-    matrix = np.array((us, ms), dtype=float)
+
+    # 构建用户矩阵
+    matrix = np.array((us, ms + 1), dtype=float)
+
+    UserDict = getItemDict(user[["用户ID", "电影名"]], pathDict, item="user")
+    MovieDict = getItemDict(user[["用户ID", "电影名"]], pathDict, item="movie")
+
+    for row in user.iterrows():
+        usr, mv, score = row["用户ID"], row["电影名"], row["评分"]
+        usr_id, mv_id = UserDict[usr_id], MovieDict[mv_id]
+        matrix[usr_id][mv_id+1] = score
 
     pass
