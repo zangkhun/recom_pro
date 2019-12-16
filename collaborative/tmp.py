@@ -1,8 +1,21 @@
+import io
 import pandas as pd
 
 from surprise import KNNBaseline
 from surprise import Reader
 from surprise import Dataset
+
+from .generate_matrix import getItemDict, reverseDict
+
+
+def read_item_names():
+    """ movie name -> id"""
+    file_name = ""
+
+    rid_to_name = {}
+    name_to_rid = {}
+
+    return rid_to_name, name_to_rid
 
 
 if __name__ == '__main__':
@@ -22,5 +35,14 @@ if __name__ == '__main__':
     }
 
     algo = KNNBaseline(sim_options=sim_options)
+    algo.fit(trainset)
+
+    UserDict = getItemDict(user[["用户ID", "电影名"]], pathDict={}, item="user")
+
+    rid_to_name, name_to_rid = read_item_names()
+
+    u_name = ""
+    user_id = name_to_rid[u_name]
+
 
 
