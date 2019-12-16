@@ -56,19 +56,6 @@ def getItemMatrix(inPath):
 
 
 def getUserMatrix(inPath):
-    pass
-
-
-def getMovieMatrix(inPath):
-    pass
-
-
-if __name__ == '__main__':
-    pathDict = {
-        "user": "",
-        "movie": "",
-    }
-    user = pd.read_csv("../dataset/raw/user.csv", header=0)
     us, ms = user["用户ID"].nunique(), user["电影名"].nunique()
 
     # 构建用户矩阵
@@ -81,5 +68,20 @@ if __name__ == '__main__':
         usr, mv, score = row["用户ID"], row["电影名"], row["评分"]
         usr_id, mv_id = UserDict[usr_id], MovieDict[mv_id]
         matrix[usr_id][mv_id+1] = score
+
+    return matrix
+
+
+def getMovieMatrix(inPath):
+    pass
+
+
+if __name__ == '__main__':
+    pathDict = {
+        "user": "",
+        "movie": "",
+    }
+    user = pd.read_csv("../dataset/raw/user.csv", header=0)
+
 
     pass
