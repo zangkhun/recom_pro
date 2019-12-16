@@ -25,6 +25,7 @@ def getUserDict(path, df):
     return df2Dict(UserDF)
 
 
+
 def getMovieDict(path, df):
     UserDF = pd.read_pickle(path) if os.path.exists(path) else df
     UserDF.sort_values(by="user", ascending=True, inplace=True)
