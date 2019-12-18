@@ -25,7 +25,6 @@ def getUserDict(path, df):
     return df2Dict(UserDF)
 
 
-
 def getMovieDict(path, df):
     UserDF = pd.read_pickle(path) if os.path.exists(path) else df
     UserDF.sort_values(by="user", ascending=True, inplace=True)
@@ -46,9 +45,17 @@ def getItemDict(UserMovieDF, pathDict, item="user"):
 
     itemDF = pd.read_pickle(path) if os.path.exists(path) else UserMovieDF[item]
     # 保证固定数据集生成字典一致
-    itemDF.sort_values(by=item, ascending=True, inplace=True)
+    itemDF = itemDF.sort_values(ascending=True)
+    # print(type(itemDF.unique()), itemDF.unique().shape)
+    items = itemDF.unique().flat
 
-    return df2Dict(itemDF)
+    name_to_id, id_to_name = {}, {}
+    for e in items:
+        position = np.where(items == e)[0][0]
+        name_to_id[e] = position
+        id_to_name[position] = e
+
+    return name_to_id, id_to_name
 
 
 def getItemMatrix(inPath):
@@ -56,33 +63,33 @@ def getItemMatrix(inPath):
     pass
 
 
-def getUserMatrix(inPath):
-    us, ms = user["用户ID"].nunique(), user["电影名"].nunique()
-
-    # 构建用户矩阵
-    matrix = np.array((us, ms + 1), dtype=float)
-
-    UserDict = getItemDict(user[["用户ID", "电影名"]], pathDict, item="user")
-    MovieDict = getItemDict(user[["用户ID", "电影名"]], pathDict, item="movie")
-
-    for row in user.iterrows():
-        usr, mv, score = row["用户ID"], row["电影名"], row["评分"]
-        usr_id, mv_id = UserDict[usr_id], MovieDict[mv_id]
-        matrix[usr_id][mv_id+1] = score
-
-    return matrix
+# def getUserMatrix(inPath):
+#     us, ms = user["用户ID"].nunique(), user["电影名"].nunique()
+#
+#     # 构建用户矩阵
+#     matrix = np.array((us, ms + 1), dtype=float)
+#
+#     UserDict = getItemDict(user[["用户ID", "电影名"]], pathDict, item="user")
+#     MovieDict = getItemDict(user[["用户ID", "电影名"]], pathDict, item="movie")
+#
+#     for row in user.iterrows():
+#         usr, mv, score = row["用户ID"], row["电影名"], row["评分"]
+#         usr_id, mv_id = UserDict[usr_id], MovieDict[mv_id]
+#         matrix[usr_id][mv_id+1] = score
+#
+#     return matrix
 
 
 def getMovieMatrix(inPath):
     pass
 
 
-if __name__ == '__main__':
-    pathDict = {
-        "user": "",
-        "movie": "",
-    }
-    user = pd.read_csv("../dataset/raw/user.csv", header=0)
-
-
-    pass
+# if __name__ == '__main__':
+#     pathDict = {
+#         "user": "",
+#         "movie": "",
+#     }
+#     user = pd.read_csv("../dataset/raw/user.csv", header=0)
+#
+#
+#     pass
