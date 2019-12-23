@@ -16,7 +16,10 @@ def GetInput(csv_path, sample_frac=1):
     data = pd.read_csv(csv_path, header=0)
     data = data.sample(frac=sample_frac, random_state=42)
 
-    return data
+    trainset = data[data["评论时间"] <= "2018-01-23 23:59:59"]
+    testset = data[data["评论时间"] > "2018-01-23 23:59:59"]
+
+    return trainset, testset
 
 
 def BuildCollaborativeModel(baseline=KNNBaseline, isUserBased=True):
@@ -109,7 +112,7 @@ def handleItemDict(UserMovieDF, path="../dataset/train", item="user"):
 def test():
     csv_path = "../dataset/raw/user.csv"
 
-    raw = GetInput(csv_path=csv_path, sample_frac=0.01)
+    raw, testset = GetInput(csv_path=csv_path, sample_frac=0.01)
 
     handleItemDict(raw[["用户ID", "电影名"]], item="movie")
     handleItemDict(raw[["用户ID", "电影名"]], item="user")
