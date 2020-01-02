@@ -1,4 +1,5 @@
 import os
+import csv
 import numpy as np
 import pandas as pd
 
@@ -72,16 +73,102 @@ def getItemDict(UserMovieDF, pathDict, item="user"):
     return name_to_id, id_to_name
 
 
+def getItemDictV2(path="../dataset/train", item="user"):
+    path = path + "/" + item + ".csv"
+    if not os.path.exists(path):
+        raise Exception("先执行 handleItemDict() 保存数据")
+
+    name_to_id, id_to_name = {}, {}
+    for line in open(path, "r", encoding="utf-8"):
+        index, name = line.split(",")[:2]
+        index = int(index.replace("\n", ""))
+        name = name.replace("\n", "")
+        name = name if item == "movie" else int(name)
+        name_to_id[name] = index
+        id_to_name[index] = name
+
+    return name_to_id, id_to_name
+
+
+def handleItemDict(UserMovieDF, path="../dataset/train", item="user"):
+    UserMovieDF.columns = ["user", "movie"]
+    itemDF = UserMovieDF[item]
+    itemDF = itemDF.sort_values(ascending=True)
+    items = itemDF.unique().flat
+
+    path = path + "/" + item + ".csv"
+    if not os.path.exists(path):
+        with open(path, "w", encoding="utf-8") as f:
+            for i, e in enumerate(items):
+                line = str(i) + "," + str(e)
+                f.write(line + "\n")
+
+    print("data for {} is saved..".format(item))
+
+
+def test():
+    csv_path = "../dataset/raw/user.csv"
+
+    raw = GetInput(csv_path=csv_path, sample_frac=0.01)
+
+    handleItemDict(raw[["用户ID", "电影名"]], item="movie")
+    handleItemDict(raw[["用户ID", "电影名"]], item="user")
+
+    # user & item 字典，便于后续输入数据转换或其它查找操作
+    mv_to_id, id_to_mv = getItemDictV2(item="movie")
+    usr_to_id, id_to_usr = getItemDictV2(item="user")
+
+    raw["user"] = raw["用户ID"].apply(lambda x: usr_to_id[x])
+    raw["movie"] = raw["电影名"].apply(lambda x: mv_to_id[x])
+
+    df = raw[["user", "movie", "评分"]]
+    data = Dataset.load_from_df(df, reader=Reader(rating_scale=(1, 5)))
+    trainset = data.build_full_trainset()
+
+    algo = BuildCollaborativeModel()
+    algo.fit(trainset)
+
+    testset = trainset.build_anti_testset()
+
+    A = B = 0
+    for a, b, c in testset:
+        A = a if a >= A else A
+        B = b if b >= B else B
+    print(A, B)
+    predictions = algo.test(testset)
+
+    # print(predictions[:5])
+    A = B = 0
+    for pre in predictions:
+        a, b = pre.uid, pre.iid
+        A = a if a >= A else A
+        B = b if b >= B else B
+    print(A, B, 2)
+
+    top_n = RecomTopN(predictions, n=10)  # 每个用户推荐10个电影
+
+    U = 0
+    # print or return top_n for each user
+    for uid, user_ratings in top_n.items():
+        U = uid if uid >= U else U
+    print("max U", U)
+
+    print("recom stage is done.")
+
+
 def main():
     csv_path = "../dataset/raw/user.csv"
 
     raw = GetInput(csv_path=csv_path, sample_frac=0.01)
 
-    # user & item 字典，便于后续输入数据转换或其它查找操作
-    mv_to_id, id_to_mv = getItemDict(raw[["用户名", "电影名"]], pathDict={}, item="movie")
-    usr_to_id, id_to_usr = getItemDict(raw[["用户名", "电影名"]], pathDict={}, item="user")
+    handleItemDict(raw[["用户ID", "电影名"]], item="movie")
+    handleItemDict(raw[["用户ID", "电影名"]], item="user")
 
-    raw["user"] = raw["用户名"].apply(lambda x: usr_to_id[x])
+    # user & item 字典，便于后续输入数据转换或其它查找操作
+    mv_to_id, id_to_mv = getItemDictV2(item="movie")
+    usr_to_id, id_to_usr = getItemDictV2(item="user")
+
+    raw["user"] = raw["用户ID"].apply(lambda x: usr_to_id[x])
     raw["movie"] = raw["电影名"].apply(lambda x: mv_to_id[x])
 
     df = raw[["user", "movie", "评分"]]
@@ -94,16 +181,13 @@ def main():
     testset = trainset.build_anti_testset()
     predictions = algo.test(testset)
 
-    top_n = RecomTopN(predictions, n=10)
-
-    # print or return top_n for each user
-    for uid, user_ratings in top_n.items():
-        print(uid, [item_id for (item_id, _) in user_ratings])
-        break
+    top_n = RecomTopN(predictions, n=10)    # 每个用户推荐10个电影
 
     print("recom stage is done.")
-    # return top_n
+    return top_n
 
 
-# if __name__ == '__main__':
-#     main()
+if __name__ == '__main__':
+    # max mv_id 23031, max usr_id 13544
+    # test()
+    main()
